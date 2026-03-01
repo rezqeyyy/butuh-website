@@ -1,75 +1,105 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; // Menggunakan alias @ agar clean
-import { Search, Code2, ChevronRight, LayoutDashboard, LogIn, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase"; 
+import { Search, Code2, ChevronRight, Loader2, Monitor, LayoutTemplate, ShoppingCart } from "lucide-react";
+import Link from "next/link";
 
-// --- Komponen Kecil untuk Kerapihan ---
-const MerchantCard = ({ merchant, onClick }: { merchant: any; onClick: () => void }) => (
-  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
+// --- DUMMY DATA UNTUK JUALAN WEBSITE ---
+// Nanti ini bisa kamu ganti dengan fetch dari Supabase (misal dari tabel 'products')
+const DUMMY_WEBSITES = [
+  { id: 'w1', title: 'Website Company Profile', desc: 'Cocok untuk perusahaan korporat dengan desain elegan, SEO friendly, dan sangat responsif.', price: 1500000, type: 'Landing Page', color: 'from-indigo-500 to-purple-600' },
+  { id: 'w2', title: 'Toko Online / E-Commerce', desc: 'Sistem keranjang belanja lengkap, integrasi payment gateway lokal, dan dashboard admin.', price: 3500000, type: 'Full Web App', color: 'from-emerald-400 to-teal-600' },
+  { id: 'w3', title: 'Undangan Pernikahan Digital', desc: 'Desain romantis dengan fitur RSVP tamu, galeri pre-wedding, peta lokasi, dan musik latar.', price: 500000, type: 'Mini Web', color: 'from-rose-400 to-red-500' },
+];
+
+// --- 1. Komponen Kartu Khusus Jualan Website (Produk Jadi) ---
+const WebsiteCard = ({ website }: { website: any }) => (
+  <div className="bg-white dark:bg-[#111111] rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group cursor-pointer">
+    {/* Cover Image Placeholder (Pakai Gradasi) */}
+    <div className={`h-40 w-full bg-gradient-to-br ${website.color} relative p-5 flex flex-col justify-end overflow-hidden`}>
+      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30">
+        {website.type}
+      </div>
+      <Monitor className="text-white/20 w-24 h-24 absolute -right-4 -bottom-4 transform -rotate-12" />
+    </div>
+    
+    <div className="p-6 flex flex-col flex-1">
+      <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-[#1a56db] dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-2">
+        {website.title}
+      </h3>
+      <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 line-clamp-3 flex-1">
+        {website.desc}
+      </p>
+      
+      <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 flex items-center justify-between mt-auto">
+        <div>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Harga Beli</p>
+          <p className="font-extrabold text-emerald-600 dark:text-emerald-400 text-lg">
+            Rp {website.price.toLocaleString("id-ID")}
+          </p>
+        </div>
+        <div className="bg-[#1a56db] hover:bg-blue-700 text-white p-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 active:scale-95">
+          <ShoppingCart className="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const MerchantCard = ({ merchant }: { merchant: any }) => (
+  <div className="bg-white dark:bg-[#111111] rounded-3xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group cursor-pointer">
     <div className="flex items-center gap-4 mb-4">
-      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-inner uppercase">
-        {merchant.profiles?.full_name?.charAt(0) || "D"}
+      <div className="w-14 h-14 bg-gradient-to-br from-[#1a56db] to-indigo-500 text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-inner uppercase overflow-hidden shrink-0">
+        {merchant.profiles?.avatar_url ? (
+          <img src={merchant.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+        ) : (
+          merchant.profiles?.full_name?.charAt(0) || "D"
+        )}
       </div>
       <div>
-        <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-          {merchant.profiles?.full_name}
+        <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-[#1a56db] dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+          {merchant.profiles?.full_name || "Developer"}
         </h3>
-        <p className="text-sm text-gray-500 flex items-center gap-1">
-          <Code2 className="w-3.5 h-3.5" /> {merchant.experience_years} Tahun Pengalaman
+        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+          <Code2 className="w-3.5 h-3.5" /> {merchant.experience_years || 0} Tahun Pengalaman
         </p>
       </div>
     </div>
-    <p className="text-gray-600 text-sm mb-6 line-clamp-3 flex-1 italic">
+    
+    <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 italic">
       "{merchant.short_description || "Siap membantu mewujudkan website impian Anda."}"
     </p>
-    <div className="border-t pt-4 flex items-center justify-between">
+    
+    <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 flex items-center justify-between mt-auto">
       <div>
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Harga Mulai</p>
-        <p className="font-extrabold text-blue-600 text-lg">
-          Rp {merchant.start_price?.toLocaleString("id-ID")}
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Harga Mulai</p>
+        <p className="font-extrabold text-[#1a56db] dark:text-blue-400 text-lg">
+          Rp {merchant.start_price?.toLocaleString("id-ID") || 0}
         </p>
       </div>
-      <button 
-        onClick={onClick}
-        className="bg-gray-900 text-white p-2 rounded-xl hover:bg-blue-600 transition-all shadow-md active:scale-95"
-      >
+      <div className="bg-gray-50 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 p-2.5 rounded-xl group-hover:bg-[#1a56db] group-hover:text-white dark:group-hover:bg-blue-600 transition-all shadow-sm">
         <ChevronRight className="w-5 h-5" />
-      </button>
+      </div>
     </div>
   </div>
 );
 
 export default function MarketplaceHome() {
-  const router = useRouter();
   const [merchants, setMerchants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    checkUser();
     fetchMerchants();
   }, []);
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-  };
-
   const fetchMerchants = async () => {
     try {
-      // Query dengan join ke tabel profiles
       const { data, error } = await supabase
         .from("merchants")
-        .select(`*, profiles ( full_name, role )`);
+        .select(`*, profiles ( full_name, role, avatar_url )`);
 
-      if (error) {
-        // Tampilkan error lebih detail di console agar tidak muncul {} kosong
-        console.error("Supabase Error:", error.message, "| Hint:", error.hint);
-      } else {
-        setMerchants(data || []);
-      }
+      if (!error) setMerchants(data || []);
     } catch (err) {
       console.error("Gagal fetch data:", err);
     } finally {
@@ -78,58 +108,87 @@ export default function MarketplaceHome() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 1. Header & Hero Section */}
-      <section className="bg-blue-600 text-white py-16 px-6 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
+      
+      {/* Header & Hero Section */}
+      <section className="bg-[#1a56db] dark:bg-blue-950 text-white py-20 px-6 text-center transition-colors">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-          Cari Developer Website Terbaik
+          Wujudkan Website Impianmu
         </h1>
-        <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8 font-medium">
-          Temukan developer berpengalaman untuk membangun landing page, e-commerce, hingga sistem kustom.
+        <p className="text-blue-100 dark:text-blue-200 text-lg max-w-2xl mx-auto mb-10 font-medium">
+          Beli website siap pakai yang langsung bisa digunakan, atau sewa developer ahli untuk bangun sistem sesuai kebutuhan khususmu.
         </p>
         
-        <div className="max-w-xl mx-auto flex bg-white rounded-full overflow-hidden shadow-lg p-1">
-          <div className="pl-4 flex items-center text-gray-400">
+        <div className="max-w-2xl mx-auto flex bg-white dark:bg-[#111111] rounded-full overflow-hidden shadow-xl p-1.5 border border-white/20 dark:border-zinc-800 transition-colors">
+          <div className="pl-5 flex items-center text-gray-400 dark:text-gray-500">
             <Search className="w-5 h-5" />
           </div>
           <input
             type="text"
-            placeholder="Cari keahlian (React, Golang, Flutter)..."
-            className="w-full px-4 py-3 text-gray-700 outline-none"
+            placeholder="Cari website, developer, atau keahlian (React, Landing Page)..."
+            className="w-full px-4 py-3 bg-transparent text-gray-900 dark:text-white outline-none placeholder-gray-400 dark:placeholder-gray-500"
           />
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-full font-bold transition-all">
+          <button className="bg-[#1a56db] dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white px-8 py-3 rounded-full font-bold transition-all shrink-0">
             Cari
           </button>
         </div>
       </section>
 
-      {/* 2. Daftar Developer Section */}
-      <section className="max-w-6xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-          <ChevronRight className="text-blue-600" /> Developer Tersedia
-        </h2>
+      <div className="max-w-6xl mx-auto px-6 py-12 space-y-20">
+        
+        <section>
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <LayoutTemplate className="text-emerald-500" /> Website Siap Pakai
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">Beli desain jadi, langsung online hari ini juga.</p>
+            </div>
+            <button className="hidden md:flex text-[#1a56db] dark:text-blue-400 font-bold hover:underline items-center text-sm">
+              Lihat Semua
+            </button>
+          </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Loader2 className="w-10 h-10 animate-spin mb-2" />
-            <p>Memuat daftar developer...</p>
-          </div>
-        ) : merchants.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-gray-200 shadow-inner">
-            <p className="text-gray-500 font-medium">Belum ada developer yang terdaftar di area ini.</p>
-          </div>
-        ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {merchants.map((merchant) => (
-              <MerchantCard 
-                key={merchant.id} 
-                merchant={merchant} 
-                onClick={() => router.push(`/merchant/${merchant.id}`)} 
-              />
+            {DUMMY_WEBSITES.map((website) => (
+              <div key={website.id} onClick={() => alert("Fitur detail produk web segera hadir!")}>
+                <WebsiteCard website={website} />
+              </div>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+
+        <section>
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Code2 className="text-[#1a56db] dark:text-blue-500" /> Developer Kustom
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">Sewa ahli untuk membangun sistem spesifik sesuai permintaanmu.</p>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
+              <Loader2 className="w-10 h-10 animate-spin mb-3 text-[#1a56db] dark:text-blue-500" />
+              <p className="font-medium">Memuat daftar developer...</p>
+            </div>
+          ) : merchants.length === 0 ? (
+            <div className="text-center py-24 bg-white dark:bg-[#111111] rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+              <p className="text-gray-500 dark:text-gray-400 font-medium">Belum ada developer yang terdaftar di area ini.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {merchants.map((merchant) => (
+                <Link href={`/developer/${merchant.id}`} key={merchant.id} className="block outline-none">
+                  <MerchantCard merchant={merchant} />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+      </div>
     </div>
   );
 }

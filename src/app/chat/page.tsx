@@ -1,142 +1,169 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { supabase } from "../../lib/supabase";
-import { Send, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { MessageSquare, Search, ChevronRight, Loader2, User } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-// Tipe data untuk TypeScript
-type ChatMessage = {
-  id: number;
-  created_at: string;
-  sender: string;
-  message: string;
+// Tipe data sementara untuk daftar chat
+type ChatRoom = {
+  id: string;
+  interlocutor_name: string;
+  interlocutor_avatar?: string;
+  last_message: string;
+  last_message_time: string;
+  unread_count: number;
 };
 
-export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Simulasi role: Di aplikasi asli, ini didapat dari sistem Login.
-  // Untuk uji coba, kita set sebagai 'customer'.
-  const currentUser = "customer"; 
+export default function ChatInboxPage() {
+  const router = useRouter();
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // 1. Ambil histori pesan saat halaman pertama kali dimuat
-    fetchMessages();
-
-    // 2. Aktifkan Supabase Realtime Listener
-    const channel = supabase
-      .channel("live-chat")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chats" },
-        (payload) => {
-          // Jika ada pesan baru di database, langsung tambahkan ke state UI
-          setMessages((prev) => [...prev, payload.new as ChatMessage]);
-        }
-      )
-      .subscribe();
-
-    // Cleanup listener saat komponen di-unmount (Best Practice Clean Code)
-    return () => {
-      supabase.removeChannel(channel);
+    // Nanti ini diisi logika fetch daftar chat dari Supabase.
+    // Sementara kita pakai data dummy agar UI-nya bisa dilihat dulu.
+    const loadDummyChats = () => {
+      setTimeout(() => {
+        setChatRooms([
+          {
+            id: "dev-123",
+            interlocutor_name: "RIZQI ASAN MASIKA",
+            last_message: "Halo, untuk fitur payment gateway-nya mau pakai Midtrans atau Xendit?",
+            last_message_time: "10:45",
+            unread_count: 2,
+          },
+          {
+            id: "dev-456",
+            interlocutor_name: "Budi Santoso",
+            last_message: "Website company profile-nya sudah selesai saya revisi ya mas, silakan dicek.",
+            last_message_time: "Kemarin",
+            unread_count: 0,
+          },
+          {
+            id: "dev-789",
+            interlocutor_name: "Siti Developer",
+            last_message: "Baik, saya akan mulai pengerjaan desain UI/UX-nya besok pagi.",
+            last_message_time: "Senin",
+            unread_count: 0,
+          }
+        ]);
+        setLoading(false);
+      }, 1000); // Simulasi loading 1 detik
     };
-  }, []);
 
-  // Auto-scroll ke pesan paling bawah setiap ada pesan baru
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Cek apakah user sudah login
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Silakan login untuk melihat daftar pesan.");
+        router.push("/login");
+      } else {
+        loadDummyChats();
+      }
+    };
 
-  const fetchMessages = async () => {
-    const { data, error } = await supabase
-      .from("chats")
-      .select("*")
-      .order("created_at", { ascending: true }); // Urutkan dari yang terlama ke terbaru
+    checkAuth();
+  }, [router]);
 
-    if (!error && data) {
-      setMessages(data);
-    }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const messageToSend = newMessage;
-    setNewMessage(""); // Kosongkan input langsung agar terasa cepat (Optimistic UI)
-
-    // Kirim ke database
-    const { error } = await supabase.from("chats").insert([
-      { sender: currentUser, message: messageToSend },
-    ]);
-
-    if (error) {
-      alert("Gagal mengirim pesan!");
-      console.error(error);
-    }
-  };
+  const filteredChats = chatRooms.filter(chat => 
+    chat.interlocutor_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[80vh]">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] pt-6 pb-24 transition-colors duration-300">
+      <div className="max-w-3xl mx-auto px-4 md:px-6">
         
-        {/* Chat Header */}
-        <div className="bg-blue-600 p-4 text-white flex items-center gap-3 shadow-md z-10">
-          <MessageSquare className="w-6 h-6" />
-          <div>
-            <h2 className="font-bold text-lg">Live Chat dengan Developer</h2>
-            <p className="text-blue-100 text-sm">Tanya jawab seputar pembuatan website</p>
-          </div>
+        {/* Header Section */}
+        <div className="mb-8 mt-4">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+            <MessageSquare className="text-[#1a56db] dark:text-blue-500 w-8 h-8" /> 
+            Pesan Saya
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
+            Pantau semua obrolan dengan klien atau developer di sini.
+          </p>
         </div>
 
-        {/* Chat Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-400 mt-10">
-              Belum ada pesan. Mulai percakapan sekarang!
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#111111] border border-gray-200 dark:border-zinc-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a56db]/20 dark:focus:ring-blue-500/20 focus:border-[#1a56db] dark:focus:border-blue-500 transition-all shadow-sm"
+            placeholder="Cari nama atau pesan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Chat List */}
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-colors">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-[#1a56db] dark:text-blue-500 mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">Memuat pesan...</p>
+            </div>
+          ) : filteredChats.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="bg-gray-50 dark:bg-zinc-900/50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-zinc-800">
+                <MessageSquare className="w-8 h-8 text-gray-400 dark:text-zinc-500" />
+              </div>
+              <p className="text-gray-900 dark:text-white font-bold text-lg">Tidak ada pesan ditemukan</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Coba cari dengan kata kunci lain.</p>
             </div>
           ) : (
-            messages.map((msg) => {
-              const isMe = msg.sender === currentUser;
-              return (
-                <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${
-                    isMe 
-                      ? "bg-blue-600 text-white rounded-tr-none" 
-                      : "bg-white border border-gray-200 text-gray-800 rounded-tl-none"
-                  }`}>
-                    <p className="text-sm">{msg.message}</p>
-                    <p className={`text-[10px] mt-1 text-right ${isMe ? "text-blue-200" : "text-gray-400"}`}>
-                      {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            <div className="divide-y divide-gray-100 dark:divide-zinc-800">
+              {filteredChats.map((chat) => (
+                <Link 
+                  href={`/chat/${chat.id}`} 
+                  key={chat.id}
+                  className="w-full flex items-center gap-4 p-5 hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors group cursor-pointer"
+                >
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1a56db] to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-inner overflow-hidden">
+                      {chat.interlocutor_avatar ? (
+                        <img src={chat.interlocutor_avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        chat.interlocutor_name.charAt(0)
+                      )}
+                    </div>
+                    {/* Badge Online/Unread (Opsional) */}
+                    {chat.unread_count > 0 && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white dark:border-[#111111] rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                        {chat.unread_count}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Chat Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <h3 className={`text-base font-bold truncate pr-4 ${chat.unread_count > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+                        {chat.interlocutor_name}
+                      </h3>
+                      <span className={`text-xs whitespace-nowrap ${chat.unread_count > 0 ? 'text-[#1a56db] dark:text-blue-400 font-bold' : 'text-gray-400 dark:text-gray-500 font-medium'}`}>
+                        {chat.last_message_time}
+                      </span>
+                    </div>
+                    <p className={`text-sm truncate pr-4 ${chat.unread_count > 0 ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {chat.last_message}
                     </p>
                   </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} /> {/* Elemen pancingan untuk auto-scroll */}
-        </div>
 
-        {/* Chat Input Area */}
-        <div className="p-4 bg-white border-t border-gray-100">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Ketik pesan Anda di sini..."
-              className="flex-1 px-4 py-3 bg-gray-100 border-transparent rounded-full focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-            />
-            <button
-              type="submit"
-              disabled={!newMessage.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-3 rounded-full transition-colors flex items-center justify-center"
-            >
-              <Send className="w-5 h-5 ml-1" />
-            </button>
-          </form>
+                  {/* Chevron Icon */}
+                  <div className="text-gray-300 dark:text-zinc-600 group-hover:text-[#1a56db] dark:group-hover:text-blue-400 transition-colors shrink-0">
+                    <ChevronRight size={20} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
