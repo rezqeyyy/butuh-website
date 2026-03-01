@@ -1,85 +1,74 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "../../../lib/supabase"; // Sesuaikan path
-import { LogIn } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
+import Link from "next/link";
+// Import logika dari folder hooks
+import { useLogin } from "@/hooks/auth/useLogin"; 
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // 1. Login menggunakan Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (authError) throw authError;
-
-      const userId = authData.user.id;
-
-      // 2. Ambil data profil untuk mengecek rolenya
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // 3. Arahkan ke dashboard yang sesuai
-      if (profile.role === "merchant") {
-        router.push("/dashboard/merchant");
-      } else {
-        router.push("/dashboard/user"); // Atau bisa diarahkan ke halaman beranda (/)
-      }
-
-    } catch (error: any) {
-      alert("Gagal Login: Email atau password salah!");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Panggil semua yang dibutuhkan dari custom hook
+  const { formData, isLoading, handleChange, handleLogin } = useLogin();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
-        <div className="text-center mb-8">
-          <LogIn className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-          <h1 className="text-2xl font-bold text-gray-900">Selamat Datang Kembali</h1>
-          <p className="text-gray-500 text-sm mt-1">Silakan login untuk melanjutkan</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex items-center justify-center p-4 transition-colors duration-300">
+      <div className="max-w-md w-full bg-white dark:bg-[#111111] p-8 md:p-10 rounded-3xl shadow-xl border border-gray-100 dark:border-zinc-800 transition-colors">
+        
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <LogIn className="w-8 h-8 text-[#1a56db] dark:text-blue-500" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Selamat Datang Kembali</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">Silakan login untuk melanjutkan</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="john@example.com" />
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Email</label>
+            <input 
+              type="email" 
+              name="email" 
+              required 
+              // Tambahkan || "" untuk mencegah bug "uncontrolled input" React
+              value={formData?.email || ""} 
+              onChange={handleChange} 
+              className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-4 focus:ring-[#1a56db]/10 dark:focus:ring-blue-500/20 focus:border-[#1a56db] dark:focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white font-medium placeholder-gray-400" 
+              placeholder="nama@email.com" 
+            />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••" />
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Password</label>
+            <input 
+              type="password" 
+              name="password" 
+              required 
+              // Tambahkan || "" untuk mencegah bug "uncontrolled input" React
+              value={formData?.password || ""} 
+              onChange={handleChange} 
+              className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-4 focus:ring-[#1a56db]/10 dark:focus:ring-blue-500/20 focus:border-[#1a56db] dark:focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white font-medium placeholder-gray-400" 
+              placeholder="••••••••" 
+            />
           </div>
 
-          <button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors mt-4 disabled:opacity-70">
-            {isLoading ? "Memproses..." : "Masuk"}
+          <button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full bg-[#1a56db] hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold transition-all mt-6 shadow-lg shadow-blue-500/30 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" /> Memproses...
+              </>
+            ) : (
+              "Masuk"
+            )}
           </button>
         </form>
         
-        <p className="text-center mt-6 text-sm text-gray-600">
-          Belum punya akun? <a href="/register" className="text-blue-600 font-semibold hover:underline">Daftar sekarang</a>
+        <p className="text-center mt-8 text-sm text-gray-600 dark:text-gray-400 font-medium">
+          Belum punya akun? <Link href="/register" className="text-[#1a56db] dark:text-blue-400 font-bold hover:underline">Daftar sekarang</Link>
         </p>
+
       </div>
     </div>
   );
