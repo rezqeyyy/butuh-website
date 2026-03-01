@@ -1,48 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; 
 import { Settings, Save, TrendingUp, Briefcase, Star, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+// Import dari folder baru
+import { useMerchantProfile } from "@/hooks/merchant/useMerchantProfile"; 
 
 export default function MerchantDashboard() {
-  const [merchantData, setMerchantData] = useState<any>({
-    short_description: "",
-    start_price: 0,
-    experience_years: 0,
-    total_projects: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-
-  useEffect(() => {
-    fetchMerchantProfile();
-  }, []);
-
-  const fetchMerchantProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase.from("merchants").select("*").eq("id", user.id).single();
-      if (data) setMerchantData(data);
-    }
-    setLoading(false);
-  };
-
-  const handleUpdateProfile = async () => {
-    setSaveStatus('saving');
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("merchants").update({
-      short_description: merchantData.short_description,
-      start_price: merchantData.start_price,
-      experience_years: merchantData.experience_years
-    }).eq("id", user?.id);
-    
-    if (error) {
-      setSaveStatus('error');
-    } else {
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 3000); // Pesan sukses hilang otomatis dalam 3 detik
-    }
-  };
+  // Panggil namanya yang baru
+  const { 
+    merchantData, 
+    setMerchantData, 
+    loading, 
+    saveStatus, 
+    handleUpdateProfile 
+  } = useMerchantProfile();
 
   if (loading) {
     return (
@@ -129,7 +99,7 @@ export default function MerchantDashboard() {
             <textarea 
               className="w-full p-4 bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 rounded-xl h-36 outline-none focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all font-medium text-slate-700 dark:text-white resize-none"
               placeholder="Contoh: Saya adalah Fullstack Developer berpengalaman menggunakan Next.js, Golang, dan Supabase. Siap membantu membuat sistem skala besar..."
-              value={merchantData.short_description}
+              value={merchantData.short_description || ""}
               onChange={(e) => setMerchantData({...merchantData, short_description: e.target.value})}
             />
             <p className="text-xs text-slate-400 dark:text-gray-500 font-medium text-right">Maks. 300 karakter disarankan agar rapi di kartu.</p>
