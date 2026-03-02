@@ -1,69 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { User, ArrowLeft, MessageSquare, Briefcase, Star, Clock, ShieldCheck, Code2, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+// Import logika dari folder hooks
+import { useDeveloperDetail } from "@/hooks/developer/useDeveloperDetail";
 
 export default function DeveloperDetailPage() {
   const params = useParams();
   const router = useRouter();
   const developerId = params.id as string;
 
-  const [developer, setDeveloper] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    if (!developerId) return;
-
-    const fetchDeveloperDetail = async () => {
-      const { data: merchantData } = await supabase
-        .from("merchants")
-        .select("*")
-        .eq("id", developerId)
-        .single();
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("id", developerId)
-        .single();
-
-      if (merchantData && profileData) {
-        setDeveloper({ ...merchantData, ...profileData });
-      }
-      setLoading(false);
-    };
-
-    fetchDeveloperDetail();
-  }, [developerId]);
-
-  const handleChat = async () => {
-    setIsProcessing(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      alert("Silakan login terlebih dahulu untuk mengirim pesan.");
-      router.push("/login");
-      return;
-    }
-
-    router.push(`/chat/id?to=${developerId}`);
-  };
-
-  const handleOrder = async () => {
-    setIsProcessing(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      alert("Silakan login terlebih dahulu untuk memesan jasa.");
-      router.push("/login");
-      return;
-    }
-
-    router.push(`/checkout/${developerId}`);
-  };
+  // Panggil data dan fungsi dari custom hook
+  const { developer, loading, isProcessing, handleChat, handleOrder } = useDeveloperDetail(developerId);
 
   if (loading) {
     return (
@@ -77,7 +25,7 @@ export default function DeveloperDetailPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0a0a0a]">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Developer tidak ditemukan</h1>
-        <button onClick={() => router.back()} className="text-[#1a56db] hover:underline">Kembali</button>
+        <button onClick={() => router.back()} className="text-[#1a56db] hover:underline font-medium">Kembali</button>
       </div>
     );
   }
@@ -153,7 +101,8 @@ export default function DeveloperDetailPage() {
                 disabled={isProcessing}
                 className="w-full bg-[#1a56db] hover:bg-blue-700 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-70"
               >
-                <ShoppingCart size={18} /> Pesan Jasa
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart size={18} />} 
+                {isProcessing ? "Memproses..." : "Pesan Jasa"}
               </button>
               
               <button 
