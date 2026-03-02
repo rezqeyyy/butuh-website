@@ -1,94 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabase"; 
 import { User, Camera, LogOut, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+// Import logika dari folder hooks
+import { useUserProfile } from "@/hooks/user/useUserProfile";
 
 export default function UserProfilePage() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<any>({ full_name: "", avatar_url: "" });
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setProfile(data || { full_name: "" });
-    }
-    setLoading(false);
-  };
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
-      if (uploadError) {
-        alert("Gagal upload ke storage.");
-        setUploading(false);
-        return;
-      }
-
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const newAvatarUrl = data.publicUrl;
-      
-      const { error: updateError } = await supabase.from("profiles").update({ 
-        avatar_url: newAvatarUrl 
-      }).eq("id", user?.id);
-
-      if (updateError) {
-        alert("Gagal simpan URL ke database.");
-        setUploading(false);
-        return;
-      }
-
-      setProfile({ ...profile, avatar_url: newAvatarUrl });
-      
-    } catch (error: any) {
-      alert("Terjadi kesalahan sistem.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleUpdateProfile = async () => {
-    setSaveStatus('saving');
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("profiles").update({
-      full_name: profile.full_name,
-      avatar_url: profile.avatar_url
-    }).eq("id", user?.id);
-
-    if (error) {
-      setSaveStatus('error');
-    } else {
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  // Panggil semua yang dibutuhkan dari custom hook
+  const { 
+    profile, setProfile, loading, uploading, saveStatus, 
+    handleAvatarUpload, handleUpdateProfile, handleLogout 
+  } = useUserProfile();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0a0a0a]">
+      <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
         <Loader2 className="animate-spin text-gray-400 dark:text-zinc-600 w-8 h-8" />
       </div>
     );
@@ -148,7 +73,7 @@ export default function UserProfilePage() {
               </label>
               <input 
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50 focus:ring-2 focus:ring-[#1a56db]/20 dark:focus:ring-blue-500/20 focus:border-[#1a56db] dark:focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
-                value={profile.full_name} 
+                value={profile.full_name || ""} 
                 onChange={(e) => setProfile({...profile, full_name: e.target.value})} 
                 placeholder="Masukkan nama lengkapmu..."
               />
