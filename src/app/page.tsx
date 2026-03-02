@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; 
 import { Search, Code2, ChevronRight, Loader2, Monitor, LayoutTemplate, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+// Import logika dari folder hooks
+import { useMarketplace } from "@/hooks/home/useMarketplace";
 
 // --- DUMMY DATA UNTUK JUALAN WEBSITE ---
-// Nanti ini bisa kamu ganti dengan fetch dari Supabase (misal dari tabel 'products')
 const DUMMY_WEBSITES = [
   { id: 'w1', title: 'Website Company Profile', desc: 'Cocok untuk perusahaan korporat dengan desain elegan, SEO friendly, dan sangat responsif.', price: 1500000, type: 'Landing Page', color: 'from-indigo-500 to-purple-600' },
   { id: 'w2', title: 'Toko Online / E-Commerce', desc: 'Sistem keranjang belanja lengkap, integrasi payment gateway lokal, dan dashboard admin.', price: 3500000, type: 'Full Web App', color: 'from-emerald-400 to-teal-600' },
   { id: 'w3', title: 'Undangan Pernikahan Digital', desc: 'Desain romantis dengan fitur RSVP tamu, galeri pre-wedding, peta lokasi, dan musik latar.', price: 500000, type: 'Mini Web', color: 'from-rose-400 to-red-500' },
 ];
 
-// --- 1. Komponen Kartu Khusus Jualan Website (Produk Jadi) ---
+// --- Komponen Kartu Khusus Jualan Website ---
 const WebsiteCard = ({ website }: { website: any }) => (
   <div className="bg-white dark:bg-[#111111] rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group cursor-pointer">
-    {/* Cover Image Placeholder (Pakai Gradasi) */}
     <div className={`h-40 w-full bg-gradient-to-br ${website.color} relative p-5 flex flex-col justify-end overflow-hidden`}>
       <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30">
         {website.type}
@@ -47,6 +45,7 @@ const WebsiteCard = ({ website }: { website: any }) => (
   </div>
 );
 
+// --- Komponen Kartu Developer ---
 const MerchantCard = ({ merchant }: { merchant: any }) => (
   <div className="bg-white dark:bg-[#111111] rounded-3xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group cursor-pointer">
     <div className="flex items-center gap-4 mb-4">
@@ -68,7 +67,7 @@ const MerchantCard = ({ merchant }: { merchant: any }) => (
     </div>
     
     <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 italic">
-      "{merchant.short_description || "Siap membantu mewujudkan website impian Anda."}"
+      &quot;{merchant.short_description || "Siap membantu mewujudkan website impian Anda."}&quot;
     </p>
     
     <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 flex items-center justify-between mt-auto">
@@ -86,26 +85,8 @@ const MerchantCard = ({ merchant }: { merchant: any }) => (
 );
 
 export default function MarketplaceHome() {
-  const [merchants, setMerchants] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMerchants();
-  }, []);
-
-  const fetchMerchants = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("merchants")
-        .select(`*, profiles ( full_name, role, avatar_url )`);
-
-      if (!error) setMerchants(data || []);
-    } catch (err) {
-      console.error("Gagal fetch data:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Panggil data dari custom hook
+  const { merchants, isLoading } = useMarketplace();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
