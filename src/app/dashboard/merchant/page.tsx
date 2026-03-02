@@ -1,135 +1,109 @@
 "use client";
 
-import { Settings, Save, TrendingUp, Briefcase, Star, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-// Import dari folder baru
-import { useMerchantProfile } from "@/hooks/merchant/useMerchantProfile"; 
+import { Loader2, Wallet, Briefcase, Activity, Settings, User, LogOut, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useMerchantDashboard } from "@/hooks/merchant/useMerchantDashboard";
 
-export default function MerchantDashboard() {
-  // Panggil namanya yang baru
-  const { 
-    merchantData, 
-    setMerchantData, 
-    loading, 
-    saveStatus, 
-    handleUpdateProfile 
-  } = useMerchantProfile();
+export default function MerchantDashboardPage() {
+  const { dashboardData, isLoading, handleLogout } = useMerchantDashboard();
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-950 transition-colors duration-300">
-        <div className="flex flex-col items-center gap-3 text-blue-600 dark:text-blue-500">
-          <Loader2 className="w-10 h-10 animate-spin" />
-          <p className="font-medium text-slate-500 dark:text-gray-400">Mempersiapkan Ruang Kerja...</p>
-        </div>
+      <div className="min-h-screen flex justify-center items-center bg-[#fafafa] dark:bg-[#0a0a0a] transition-colors duration-300">
+        <Loader2 className="animate-spin text-[#1a56db] w-10 h-10" />
       </div>
     );
   }
 
+  const { profile, stats } = dashboardData;
+
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-gray-950 p-6 md:p-12 pb-24 transition-colors duration-300">
-      <div className="max-w-5xl mx-auto space-y-10">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] pt-8 pb-24 transition-colors duration-300">
+      <div className="max-w-5xl mx-auto space-y-8 px-6">
         
         {/* Header Section */}
-        <header>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <TrendingUp className="text-blue-600 dark:text-blue-500 w-8 h-8" /> Ikhtisar Developer
-          </h1>
-          <p className="text-slate-500 dark:text-gray-400 mt-2 text-lg">Pantau performa dan atur etalase jasa pembuatan website kamu.</p>
-        </header>
-
-        {/* Statistik Ringkas (Bento Grid Style) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-slate-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow flex items-center gap-5">
-            <div className="p-4 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl"><Briefcase size={28} /></div>
-            <div>
-              <p className="text-slate-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">Total Project</p>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{merchantData.total_projects || 0}</p>
+        <div className="bg-white dark:bg-[#111111] p-6 md:p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-colors">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1a56db] to-indigo-500 overflow-hidden shrink-0 border-2 border-white dark:border-zinc-800 shadow-lg">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
+                  {profile?.full_name?.charAt(0) || "D"}
+                </div>
+              )}
             </div>
-          </div>
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-slate-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow flex items-center gap-5">
-            <div className="p-4 bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 rounded-2xl"><Star size={28} /></div>
             <div>
-              <p className="text-slate-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">Rating</p>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">5.0 <span className="text-sm text-slate-400 dark:text-gray-500 font-medium">/ 5</span></p>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+                Halo, {profile?.full_name || "Developer"}!
+              </h1>
+              <p className="text-zinc-500 dark:text-zinc-400 font-medium mt-1">Siap menerima pesanan proyek hari ini?</p>
             </div>
-          </div>
-          {/* Box Gradient Biru tetap dipertahankan karena sudah cocok di kedua mode */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl shadow-lg shadow-blue-500/20 text-white flex flex-col justify-center">
-            <p className="text-blue-100 text-sm font-bold uppercase tracking-wider">Status Profil</p>
-            <p className="text-2xl font-extrabold mt-1">Aktif & Publik</p>
-          </div>
-        </div>
-
-        {/* Form Pengaturan Jasa */}
-        <div className="bg-white dark:bg-gray-900 p-8 md:p-10 rounded-3xl border border-slate-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none space-y-8 transition-colors">
-          <div className="border-b border-slate-100 dark:border-gray-800 pb-5">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <Settings className="text-slate-400 dark:text-gray-500" size={24} /> Pengaturan Etalase Jasa
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Informasi ini akan ditampilkan ke calon klien di halaman utama.</p>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 dark:text-gray-300">Harga Mulai Dari (Rp)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 font-bold">Rp</span>
-                <input 
-                  type="number" 
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 rounded-xl outline-none focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all font-semibold text-slate-800 dark:text-white"
-                  value={merchantData.start_price}
-                  onChange={(e) => setMerchantData({...merchantData, start_price: parseInt(e.target.value) || 0})}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 dark:text-gray-300">Pengalaman (Tahun)</label>
-              <input 
-                type="number" 
-                className="w-full px-4 py-3.5 bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 rounded-xl outline-none focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all font-semibold text-slate-800 dark:text-white"
-                value={merchantData.experience_years}
-                onChange={(e) => setMerchantData({...merchantData, experience_years: parseInt(e.target.value) || 0})}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 dark:text-gray-300">Deskripsi Singkat Keahlian</label>
-            <textarea 
-              className="w-full p-4 bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 rounded-xl h-36 outline-none focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all font-medium text-slate-700 dark:text-white resize-none"
-              placeholder="Contoh: Saya adalah Fullstack Developer berpengalaman menggunakan Next.js, Golang, dan Supabase. Siap membantu membuat sistem skala besar..."
-              value={merchantData.short_description || ""}
-              onChange={(e) => setMerchantData({...merchantData, short_description: e.target.value})}
-            />
-            <p className="text-xs text-slate-400 dark:text-gray-500 font-medium text-right">Maks. 300 karakter disarankan agar rapi di kartu.</p>
-          </div>
-
-          {/* Bagian Tombol dan Status Simpan */}
-          <div className="pt-4 flex flex-col md:flex-row items-center gap-4">
-            <button 
-              onClick={handleUpdateProfile}
-              disabled={saveStatus === 'saving'}
-              className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-10 py-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/30 dark:shadow-blue-900/40 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {saveStatus === 'saving' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {saveStatus === 'saving' ? 'Menyimpan...' : 'Simpan Perubahan'}
-            </button>
-
-            {/* Indikator Status */}
-            {saveStatus === 'success' && (
-              <span className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-bottom-2">
-                <CheckCircle2 className="w-5 h-5" /> Profil berhasil diperbarui!
-              </span>
-            )}
-            {saveStatus === 'error' && (
-              <span className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-bottom-2">
-                <AlertCircle className="w-5 h-5" /> Gagal menyimpan perubahan.
-              </span>
-            )}
-          </div>
-
+          <button 
+            onClick={handleLogout}
+            className="w-full md:w-auto flex items-center justify-center gap-2 text-red-500 font-bold bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 px-5 py-3 rounded-xl transition-all"
+          >
+            <LogOut size={18} /> Keluar
+          </button>
         </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-[#111111] p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors">
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-[#1a56db] dark:text-blue-400 rounded-xl flex items-center justify-center mb-4">
+              <Wallet size={24} />
+            </div>
+            <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-xs mb-1">Total Pendapatan</p>
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
+              Rp {stats.totalIncome.toLocaleString('id-ID')}
+            </h3>
+          </div>
+
+          <div className="bg-white dark:bg-[#111111] p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors">
+            <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center mb-4">
+              <Activity size={24} />
+            </div>
+            <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-xs mb-1">Pesanan Aktif</p>
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
+              {stats.activeOrders} Proyek
+            </h3>
+          </div>
+
+          <div className="bg-white dark:bg-[#111111] p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors">
+            <div className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center mb-4">
+              <Briefcase size={24} />
+            </div>
+            <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider text-xs mb-1">Proyek Selesai</p>
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white">
+              {stats.completedOrders} Proyek
+            </h3>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          <Link href="/orders/merchant" className="group bg-gradient-to-br from-[#1a56db] to-indigo-600 p-8 rounded-3xl shadow-lg shadow-blue-500/20 text-white relative overflow-hidden flex justify-between items-center transition-transform hover:scale-[1.02]">
+            <div className="relative z-10">
+              <h3 className="text-xl font-extrabold mb-2">Kelola Pesanan</h3>
+              <p className="text-blue-100 font-medium">Cek kotak masuk klienmu.</p>
+            </div>
+            <ChevronRight size={32} className="relative z-10 text-blue-200 group-hover:translate-x-2 transition-transform" />
+            <div className="absolute -right-8 -bottom-8 opacity-20"><Briefcase size={120} /></div>
+          </Link>
+
+          <Link href="/profile/merchant" className="group bg-white dark:bg-[#111111] p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex justify-between items-center transition-transform hover:scale-[1.02] dark:hover:border-zinc-700">
+            <div>
+              <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-2">Etalase Profil</h3>
+              <p className="text-zinc-500 dark:text-zinc-400 font-medium">Ubah foto, harga, & deskripsi.</p>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-[#1a56db] dark:group-hover:text-blue-400 group-hover:rotate-45 transition-all">
+              <Settings size={24} />
+            </div>
+          </Link>
+        </div>
+
       </div>
     </div>
   );
