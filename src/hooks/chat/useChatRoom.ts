@@ -1,17 +1,19 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { ChatService } from "@/services/chat/chat.service";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function useChatRoom(roomId: string) {
   const router = useRouter();
+  const searchParams = useSearchParams(); 
+  const urlTargetId = searchParams.get("targetId"); 
+
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
-  // State baru untuk menyimpan nama lawan bicara
-  const [roomName, setRoomName] = useState<string>(roomId); 
+  const [roomName, setRoomName] = useState<string>("Memuat..."); 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -24,26 +26,45 @@ export function useChatRoom(roomId: string) {
       }
       setCurrentUser(user);
       
+      // Ambil riwayat chat
       const { data } = await ChatService.getRoomMessages(roomId);
-      
       if (data && data.length > 0) {
         setMessages(data);
-        
-        // Cari ID lawan bicara dari pesan yang ada
+      }
+      
+      // --- LOGIKA PINTAR MENCARI NAMA LAWAN BICARA ---
+      let finalTargetId = urlTargetId;
+
+      // 1. Kalau dari parameter URL kosong, EKSTRAK dari ID Ruangan (format uuidKamu_uuidDia)
+      if (!finalTargetId && roomId.includes('_')) {
+        const parts = roomId.split('_');
+        // Ambil UUID yang BUKAN milik kita
+        finalTargetId = parts[0] === user.id ? parts[1] : parts[0];
+      } 
+      // 2. Fallback untuk chat format jadul
+      else if (!finalTargetId && roomId.length > 20 && roomId !== user.id && roomId !== "null") {
+        finalTargetId = roomId;
+      }
+
+      // 3. Kalau masih kosong juga, coba cari dari riwayat pesan (siapa tahu dia udah balas)
+      if (!finalTargetId && data && data.length > 0) {
         const interlocutorMsg = data.find((msg) => msg.sender_id !== user.id);
+        if (interlocutorMsg) finalTargetId = interlocutorMsg.sender_id;
+      }
+
+      // 4. Tarik nama aslinya dari Database!
+      if (finalTargetId) {
+        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", finalTargetId).single();
         
-        if (interlocutorMsg) {
-          // Cari nama aslinya di tabel profiles
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", interlocutorMsg.sender_id)
-            .single();
-            
-          if (profile?.full_name) {
-            setRoomName(profile.full_name);
-          }
+        if (profile?.full_name) {
+          setRoomName(profile.full_name);
+        } else {
+          // Kalau profilnya dihapus
+          setRoomName(roomId.includes('_') ? "Pengguna Tidak Dikenal" : roomId);
         }
+      } else {
+        // Fallback terakhir banget
+        setRoomName(roomId.includes('_') ? "Pengguna Tidak Dikenal" : roomId);
       }
       
       setLoading(false);
@@ -62,9 +83,8 @@ export function useChatRoom(roomId: string) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [roomId, router]);
+  }, [roomId, urlTargetId, router]); 
 
-  // Auto-scroll ke bawah
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -74,7 +94,7 @@ export function useChatRoom(roomId: string) {
     if (!newMessage.trim() || !currentUser) return;
 
     const msg = newMessage;
-    setNewMessage(""); // Kosongkan input langsung
+    setNewMessage("");
 
     await ChatService.sendMessage(roomId, currentUser.id, msg);
   };
@@ -86,7 +106,7 @@ export function useChatRoom(roomId: string) {
     currentUser,
     loading,
     messagesEndRef,
-    roomName, // Export state nama ruangannya
+    roomName,
     handleSendMessage
   };
 }

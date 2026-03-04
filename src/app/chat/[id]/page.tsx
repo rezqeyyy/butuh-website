@@ -29,9 +29,9 @@ export default function ChatRoomPage() {
             <ArrowLeft size={20} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg">
-              {/* Tampilkan huruf depan namanya di Avatar */}
-              {roomName.charAt(0).toUpperCase()}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg shadow-inner">
+              {/* 👇 PERBAIKAN DI SINI: Tampilkan jam pasir kalau masih loading nama */}
+              {roomName === "Memuat..." ? "⏳" : roomName.charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight">
@@ -75,9 +75,9 @@ export default function ChatRoomPage() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(e as any); } }}
             placeholder="Ketik pesan..."
             rows={1}
-            className="flex-1 max-h-32 min-h-[44px] resize-none px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-all"
+            className="flex-1 max-h-32 min-h-[44px] resize-none px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-all shadow-inner"
           />
-          <button type="submit" disabled={!newMessage.trim()} className="shrink-0 w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-full flex items-center justify-center transition-all disabled:cursor-not-allowed">
+          <button type="submit" disabled={!newMessage.trim()} className="shrink-0 w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-full flex items-center justify-center transition-all disabled:cursor-not-allowed shadow-md">
             <Send className="w-5 h-5 ml-0.5" />
           </button>
         </form>

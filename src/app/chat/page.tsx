@@ -51,7 +51,7 @@ export default function ChatInboxPage() {
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {filteredChats.map((chat: any) => (
                 <Link 
-                  href={`/chat/${chat.id}`} 
+                  href={`/chat/${chat.id}?targetId=${chat.interlocutor_id || ''}`} 
                   key={chat.id}
                   className="w-full flex items-center gap-4 p-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group cursor-pointer"
                 >

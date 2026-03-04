@@ -32,8 +32,12 @@ export function useDeveloperDetail(developerId: string) {
       return;
     }
 
-    // Arahkan langsung ke ruang chat dengan developer ini
-    router.push(`/chat/${developerId}`);
+    // 1. BIKIN ROOM ID UNIK (Gabungan ID Kamu dan ID Developer)
+    // Di-sort agar urutannya selalu sama walau yang nge-chat duluan beda orang
+    const uniqueRoomId = [user.id, developerId].sort().join('_');
+
+    // 2. Arahkan ke ruang chat, bawa targetId di URL biar halaman chat tau nama developernya!
+    router.push(`/chat/${uniqueRoomId}?targetId=${developerId}`);
   };
 
   const handleOrder = async () => {

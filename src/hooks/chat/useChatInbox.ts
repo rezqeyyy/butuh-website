@@ -28,7 +28,23 @@ export function useChatInbox() {
       const groupedRooms: Record<string, any> = {};
 
       allChats.forEach((chat) => {
-        // Tadi di sini ada kode buat ngebasmi "null", sekarang UDAH GUA HAPUS biar chatnya balik!
+        // 1. Coba cari ID lawan bicara dari pengirim pesan (kalau dia udah balas)
+        let targetId = chat.sender_id !== user.id ? chat.sender_id : null;
+
+        // 2. 💡 TRIK PINTAR: Kalau targetId masih null (karena dia belum balas), 
+        // kita akali dengan MENGESKTRAK ID dari nama ruangan!
+        if (!targetId && chat.room_id) {
+          const roomIdStr = String(chat.room_id);
+          
+          if (roomIdStr.includes('_')) {
+            // Room format baru yang aman (uuidKamu_uuidDeveloper)
+            const parts = roomIdStr.split('_');
+            targetId = parts[0] === user.id ? parts[1] : parts[0];
+          } else if (roomIdStr.length > 20 && roomIdStr !== user.id && roomIdStr !== "null") {
+            // Fallback untuk room format lama (yang nama ruangannya cuma UUID developer doang)
+            targetId = roomIdStr;
+          }
+        }
 
         if (!groupedRooms[chat.room_id]) {
           const date = new Date(chat.created_at);
@@ -39,13 +55,13 @@ export function useChatInbox() {
             last_message: chat.message,
             last_message_time: timeString,
             timestamp: date.getTime(), 
-            interlocutor_id: chat.sender_id !== user.id ? chat.sender_id : null,
-            // NAMA DEFAULT: Langsung pake nama room-nya aja TANPA embel-embel "Room:"
-            interlocutor_name: String(chat.room_id)
+            interlocutor_id: targetId, // Simpan targetId yang udah kita ekstrak
+            interlocutor_name: String(chat.room_id) // Default: Nama ruangannya dulu
           };
         } else {
-          if (!groupedRooms[chat.room_id].interlocutor_id && chat.sender_id !== user.id) {
-            groupedRooms[chat.room_id].interlocutor_id = chat.sender_id;
+          // Kalau tadi inter_id nya belum ketemu, coba diupdate
+          if (!groupedRooms[chat.room_id].interlocutor_id && targetId) {
+            groupedRooms[chat.room_id].interlocutor_id = targetId;
           }
         }
       });
@@ -53,7 +69,7 @@ export function useChatInbox() {
       const roomsArray = Object.values(groupedRooms);
       
       const finalRooms = await Promise.all(roomsArray.map(async (room) => {
-        // Kalau ketemu ID lawan bicara, kita ganti nama room-nya jadi nama asli orangnya
+        // Kalau kita berhasil dapet ID lawan bicaranya, kita cari nama aslinya!
         if (room.interlocutor_id) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -62,7 +78,7 @@ export function useChatInbox() {
             .single();
             
           if (profile?.full_name) {
-            room.interlocutor_name = profile.full_name;
+            room.interlocutor_name = profile.full_name; // Ganti ID panjang dengan nama asli
           }
         }
         return room;
