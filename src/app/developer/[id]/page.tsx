@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { User, ArrowLeft, MessageSquare, Briefcase, Star, Clock, ShieldCheck, Code2, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
 // Import logika dari folder hooks
-import { useDeveloperDetail } from "@/hooks/developer/useDeveloperDetail";
+import { useDeveloperDetail } from "@/hooks/user/detaildeveloper/useDeveloperDetail";
 
 export default function DeveloperDetailPage() {
   const params = useParams();

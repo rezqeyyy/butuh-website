@@ -3,7 +3,7 @@
 import { Clock, CheckCircle, Package, LayoutTemplate, Loader2 } from "lucide-react";
 import Link from "next/link";
 // Import logika dari folder hooks
-import { useUserOrders } from "@/hooks/user/useUserOrders";
+import { useUserOrders } from "@/hooks/user/orders/useUserOrders";
 
 export default function UserOrdersPage() {
   // Panggil data dari custom hook
